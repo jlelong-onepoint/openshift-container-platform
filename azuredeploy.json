@@ -253,7 +253,22 @@
 			"metadata": {
 				"description": "Default Subdomain for application routing (Wildcard DNS) - must enter something even if you are using nip.io. Must be all lowercase"
 			}
+		},
+		"infraLbPublicIpName": {
+			"type": "string",
+			"defaultValue": "[concat('infradns', uniqueString(concat(resourceGroup().id, 'infra')))]",
+			"metadata": {
+				"description": "Name and label of the ip address for infra load balancer. If it already exists in the same group, it will be used"
+			}
+		},
+		"openshiftMasterPublicIpName": {
+			"type": "string",
+			"defaultValue": "[concat('masterdns', uniqueString(concat(resourceGroup().id, 'master')))]",
+			"metadata": {
+				"description": "Name and label of the ip address for master load balancer. If it already exists in the same group, it will be used"
+			}
 		}
+
 	},
 	"variables": {
 		"location": "[resourceGroup().location]",
@@ -360,7 +375,7 @@
 		"persistentVolume1Type": "Standard_LRS",
 
 		"masterLoadBalancerName": "[concat(variables('openshiftMasterHostname'), 'lb')]",
-		"masterPublicIpAddressId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('openshiftMasterPublicIpDnsLabel'))]",
+		"masterPublicIpAddressId": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('openshiftMasterPublicIpName'))]",
 		"masterLbId": "[resourceId('Microsoft.Network/loadBalancers', variables('masterLoadBalancerName'))]",
 		"masterLbFrontEndConfigId": "[concat(variables('masterLbId'), '/frontendIPConfigurations/loadBalancerFrontEnd')]",
 		"masterLbBackendPoolId": "[concat(variables('masterLbId'),'/backendAddressPools/loadBalancerBackend')]",
@@ -368,17 +383,14 @@
 		"masterLb443ProbeId": "[concat(variables('masterLbId'),'/probes/443Probe')]",
 
 		"infraLoadBalancerName": "[concat(variables('openshiftInfraHostname'), 'lb')]",
-		"infraPublicIpAddressId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('infraLbPublicIpDnsLabel'))]",
+		"infraPublicIpAddressId": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('infraLbPublicIpName'))]",
 		"infraLbId": "[resourceId('Microsoft.Network/loadBalancers', variables('infraLoadBalancerName'))]",
 		"infraLbFrontEndConfigId": "[concat(variables('infraLbId'), '/frontendIPConfigurations/loadBalancerFrontEnd')]",
 		"infraLbBackendPoolId": "[concat(variables('infraLbId'),'/backendAddressPools/loadBalancerBackend')]",
 		"infraLbHttpProbeId": "[concat(variables('infraLbId'),'/probes/httpProbe')]",
 		"infraLbHttpsProbeId": "[concat(variables('infraLbId'),'/probes/httpsProbe')]",
 		"imageReference": {
-			"publisher": "RedHat",
-			"offer": "RHEL",
-			"sku": "7-RAW",
-			"version": "latest"
+			"id": "[resourceId('ocpgop', 'Microsoft.Compute/images', 'RedHat74OSImage')]"
 		},
 		"redHatTags": {
 			"app": "OpenShiftContainerPlatform",
@@ -997,7 +1009,7 @@
 			}
 		}, {
 			"type": "Microsoft.Network/publicIPAddresses",
-			"name": "[variables('infraLbPublicIpDnsLabel')]",
+			"name": "[parameters('infraLbPublicIpName')]",
 			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionNetwork')]",
 			"tags": {
@@ -1013,7 +1025,7 @@
 			}
 		}, {
 			"type": "Microsoft.Network/publicIPAddresses",
-			"name": "[variables('openshiftMasterPublicIpDnsLabel')]",
+			"name": "[parameters('openshiftMasterPublicIpName')]",
 			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionNetwork')]",
 			"tags": {
@@ -1059,7 +1071,7 @@
 				"app": "[variables('redHatTags').app]"
 			},
 			"dependsOn": [
-				"[concat('Microsoft.Network/publicIPAddresses/', variables('openshiftMasterPublicIpDnsLabel'))]"
+				"[concat('Microsoft.Network/publicIPAddresses/', parameters('openshiftMasterPublicIpName'))]"
 			],
 			"properties": {
 				"frontendIPConfigurations": [{
@@ -1136,7 +1148,7 @@
 				"app": "[variables('redHatTags').app]"
 			},
 			"dependsOn": [
-				"[concat('Microsoft.Network/publicIPAddresses/', variables('infraLbPublicIpDnsLabel'))]"
+				"[concat('Microsoft.Network/publicIPAddresses/', parameters('infraLbPublicIpName'))]"
 			],
 			"properties": {
 				"frontendIPConfigurations": [{
@@ -1842,10 +1854,10 @@
 						"value": "[variables('openshiftMasterHostname')]"
 					},
 					"openshiftMasterPublicIpFqdn": {
-						"value": "[reference(variables('openshiftMasterPublicIpDnsLabel')).dnsSettings.fqdn]"
+						"value": "[reference(parameters('openshiftMasterPublicIpName')).dnsSettings.fqdn]"
 					},
 					"openshiftMasterPublicIpAddress": {
-						"value": "[reference(variables('openshiftMasterPublicIpDnsLabel')).ipAddress]"
+						"value": "[reference(parameters('openshiftMasterPublicIpName')).ipAddress]"
 					},
 					"openshiftInfraHostname": {
 						"value": "[variables('openshiftInfraHostname')]"
@@ -1887,7 +1899,7 @@
 						"value": "[parameters('aadClientSecret')]"
 					},
 					"nipioDomain": {
-						"value": "[concat(reference(variables('infraLbPublicIpDnsLabel')).ipAddress, '.nip.io')]"
+						"value": "[concat(reference(parameters('infraLbPublicIpName')).ipAddress, '.nip.io')]"
 					},
 					"customDomain": {
 						"value": "[variables('defaultSubDomain')]"
@@ -1905,7 +1917,7 @@
 	"outputs": {
 		"Openshift Console Url": {
 			"type": "string",
-			"value": "[concat('https://', reference(variables('openshiftMasterPublicIpDnsLabel')).dnsSettings.fqdn, ':443/console')]"
+			"value": "[concat('https://', reference(parameters('openshiftMasterPublicIpName')).dnsSettings.fqdn, ':443/console')]"
 		},
 		"Bastion DNS FQDN": {
 			"type": "string",
@@ -1917,11 +1929,11 @@
 		},
 		"Openshift Master SSH": {
 			"type": "string",
-			"value": "[concat('ssh -p 2200 ', parameters('adminUsername'), '@', reference(variables('openshiftMasterPublicIpDnsLabel')).dnsSettings.fqdn)]"
+			"value": "[concat('ssh -p 2200 ', parameters('adminUsername'), '@', reference(parameters('openshiftMasterPublicIpName')).dnsSettings.fqdn)]"
 		},
 		"Openshift Infra Load Balancer FQDN": {
 			"type": "string",
-			"value": "[reference(variables('infraLbPublicIpDnsLabel')).dnsSettings.fqdn]"
+			"value": "[reference(parameters('infraLbPublicIpName')).dnsSettings.fqdn]"
 		}
 	}
 }
