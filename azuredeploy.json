@@ -390,7 +390,7 @@
 		"infraLbHttpProbeId": "[concat(variables('infraLbId'),'/probes/httpProbe')]",
 		"infraLbHttpsProbeId": "[concat(variables('infraLbId'),'/probes/httpsProbe')]",
 		"imageReference": {
-			"id": "[resourceId('ocpgop', 'Microsoft.Compute/images', 'RedHat74OSImage')]"
+			"id": "[resourceId('ocpgop', 'Microsoft.Compute/images', 'RedHat74Image')]"
 		},
 		"redHatTags": {
 			"app": "OpenShiftContainerPlatform",

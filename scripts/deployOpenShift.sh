@@ -180,6 +180,10 @@ openshift_logging_curator_nodeselector={"region":"infra"}
 openshift_master_logging_public_url=https://kibana.$ROUTING
 openshift_logging_master_public_url=https://$MASTERPUBLICIPHOSTNAME:443
 
+# Fix : https://access.redhat.com/solutions/3480921
+oreg_url_master=registry.access.redhat.com/openshift3/ose-${component}:${version}
+oreg_url_node=registry.access.redhat.com/openshift3/ose-${component}:${version}
+
 # host group for masters
 [masters]
 $MASTER-[0:${MASTERLOOP}]
